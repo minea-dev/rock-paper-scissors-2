@@ -4,6 +4,8 @@ import com.mlicer.rockpaperscissors.domain.rules.ClassicRules;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GameTest {
@@ -16,7 +18,7 @@ public class GameTest {
     void setUp() {
         player1 = new Player("1", "Alice");
         player2 = new Player("2", "Bob");
-        game = new Game("game-123", player1, player2, new ClassicRules());
+        game = new Game("game-123", player1, player2, new ClassicRules(), WinningCondition.bestOf(5));
     }
 
     @Test
@@ -104,7 +106,7 @@ public class GameTest {
     @Test
     void shouldThrowExceptionWhenPlayersAreTheSame() {
         assertThrows(IllegalArgumentException.class, () ->
-                new Game("game-1", player1, player1, new ClassicRules())
+                new Game("game-1", player1, player1, new ClassicRules(), WinningCondition.bestOf(5))
         );
     }
 
@@ -127,8 +129,9 @@ public class GameTest {
 
     @Test
     void shouldThrowExceptionWhenGameIdOrRulesAreNull() {
-        assertThrows(IllegalArgumentException.class, () -> new Game(null, player1, player2, new ClassicRules()));
-        assertThrows(IllegalArgumentException.class, () -> new Game("game-1", player1, player2, null));
+        assertThrows(IllegalArgumentException.class, () -> new Game(null, player1, player2, new ClassicRules(), WinningCondition.bestOf(5)));
+        assertThrows(IllegalArgumentException.class, () -> new Game("game-1", player1, player2, null, WinningCondition.bestOf(5)));
+        assertThrows(IllegalArgumentException.class, () -> new Game("game-1", player1, player2, new ClassicRules(), null));
     }
 
     @Test
@@ -145,5 +148,40 @@ public class GameTest {
         game.playRound(player2, Move.SCISSORS);
 
         assertTrue(game.getWinner().isEmpty());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenPlayersAreNull() {
+        assertThrows(IllegalArgumentException.class, () ->
+                new Game("game-1", null, player2, new ClassicRules(), WinningCondition.bestOf(5))
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+                new Game("game-1", player1, null, new ClassicRules(), WinningCondition.bestOf(5))
+        );
+    }
+
+    @Test
+    void shouldRecordRoundHistoryCorrectly() {
+        game.playRound(player1, Move.ROCK);
+        game.playRound(player2, Move.SCISSORS);
+
+        game.playRound(player1, Move.PAPER);
+        game.playRound(player2, Move.PAPER);
+
+        List<Round> history = game.getRoundsHistory();
+
+        assertEquals(2, history.size());
+
+        Round firstRound = history.get(0);
+        assertEquals(1, firstRound.roundNumber());
+        assertEquals(Move.ROCK, firstRound.player1Move());
+        assertEquals(Move.SCISSORS, firstRound.player2Move());
+        assertEquals(Result.WIN, firstRound.result());
+
+        Round secondRound = history.get(1);
+        assertEquals(2, secondRound.roundNumber());
+        assertEquals(Move.PAPER, secondRound.player1Move());
+        assertEquals(Move.PAPER, secondRound.player2Move());
+        assertEquals(Result.DRAW, secondRound.result());
     }
 }
