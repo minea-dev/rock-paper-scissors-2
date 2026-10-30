@@ -197,6 +197,10 @@ public class Game {
         this.status = GameStatus.ABANDONED;
     }
 
+    public GameRules getRules() {
+        return rules;
+    }
+
     public List<Round> getRoundsHistory() {
         return Collections.unmodifiableList(rounds);
     }
