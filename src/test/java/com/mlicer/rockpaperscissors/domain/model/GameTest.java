@@ -184,4 +184,99 @@ public class GameTest {
         assertEquals(Move.PAPER, secondRound.player2Move());
         assertEquals(Result.DRAW, secondRound.result());
     }
+
+    @Test
+    void shouldCreateMultiplayerGameWaitingForPlayer2() {
+        Game multiplayerGame = new Game("room-123", player1, new ClassicRules(), WinningCondition.bestOf(3));
+
+        assertEquals(GameStatus.WAITING_FOR_PLAYER, multiplayerGame.getStatus());
+        assertNull(multiplayerGame.getPlayer2());
+        assertEquals(player1, multiplayerGame.getPlayer1());
+    }
+
+    @Test
+    void shouldAllowGuestPlayerToJoinWaitingGame() {
+        Game waitingGame = new Game("room-100", player1, new ClassicRules(), WinningCondition.bestOf(3));
+        assertEquals(GameStatus.WAITING_FOR_PLAYER, waitingGame.getStatus());
+        assertNull(waitingGame.getPlayer2());
+
+        waitingGame.join(player2);
+
+        assertEquals(GameStatus.IN_PROGRESS, waitingGame.getStatus());
+        assertEquals(player2, waitingGame.getPlayer2());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenGuestIsNull() {
+        Game waitingGame = new Game("room-100", player1, new ClassicRules(), WinningCondition.bestOf(3));
+        assertThrows(IllegalArgumentException.class, () -> waitingGame.join(null));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenHostTriesToJoinThemselves() {
+        Game waitingGame = new Game("room-100", player1, new ClassicRules(), WinningCondition.bestOf(3));
+        assertThrows(IllegalArgumentException.class, () -> waitingGame.join(player1));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenThirdPlayerTriesToJoinFullGame() {
+        Player player3 = new Player("3", "Charlie");
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> game.join(player3)
+        );
+        assertEquals("Game is already full or not open for joining.", exception.getMessage());
+    }
+
+    @Test
+    void shouldAllowPlayerToAbandonAndDeclareOpponentAsWinner() {
+        Game inProgressGame = new Game("room-123", player1, player2, new ClassicRules(), WinningCondition.bestOf(3));
+        assertEquals(GameStatus.IN_PROGRESS, inProgressGame.getStatus());
+
+        inProgressGame.abandon(player1);
+
+        assertEquals(GameStatus.ABANDONED, inProgressGame.getStatus());
+        assertTrue(inProgressGame.getWinner().isPresent());
+        assertEquals(player2, inProgressGame.getWinner().get());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenNullPlayerTriesToAbandon() {
+        assertThrows(IllegalArgumentException.class, () -> game.abandon(null));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTryingToAbandonAFinishedGame() {
+        for (int i = 0; i < 3; i++) {
+            game.playRound(player1, Move.ROCK);
+            game.playRound(player2, Move.SCISSORS);
+        }
+        assertEquals(GameStatus.FINISHED, game.getStatus());
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> game.abandon(player1)
+        );
+        assertEquals("Cannot abandon a game that is already finished or abandoned.", exception.getMessage());
+    }
+
+    @Test
+    void shouldHideMoveValueButConfirmPlayerHasMoved() {
+        Game inProgressGame = new Game("room-123", player1, player2, new ClassicRules(), WinningCondition.bestOf(3));
+
+        assertFalse(inProgressGame.hasPlayerMoved(player1));
+        assertFalse(inProgressGame.hasPlayerMoved(player2));
+
+        inProgressGame.playRound(player1, Move.ROCK);
+
+        assertTrue(inProgressGame.hasPlayerMoved(player1));
+        assertFalse(inProgressGame.hasPlayerMoved(player2));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCheckingMoveForUnknownPlayer() {
+        Player unknown = new Player("99", "Hacker");
+        assertThrows(IllegalArgumentException.class, () -> game.hasPlayerMoved(unknown));
+    }
 }

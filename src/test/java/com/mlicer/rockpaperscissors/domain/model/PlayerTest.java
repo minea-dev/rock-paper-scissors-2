@@ -2,6 +2,7 @@ package com.mlicer.rockpaperscissors.domain.model;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -32,5 +33,14 @@ public class PlayerTest {
     @Test
     void shouldThrowExceptionWhenUsernameIsNull() {
         assertThrows(IllegalArgumentException.class, () -> new Player("1", null));
+    }
+
+    @Test
+    void shouldCreateBotPlayerWithStandardizedIdentity() {
+        Player bot = Player.createBot();
+
+        assertNotNull(bot);
+        assertEquals("CPU", bot.id());
+        assertEquals("CPU", bot.username());
     }
 }

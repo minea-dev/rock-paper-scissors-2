@@ -10,4 +10,8 @@ public record Player(String id, String username) {
             throw new IllegalArgumentException("Username cannot be empty or null");
         }
     }
+
+    public static Player createBot() {
+        return new Player("CPU", "CPU");
+    }
 }
