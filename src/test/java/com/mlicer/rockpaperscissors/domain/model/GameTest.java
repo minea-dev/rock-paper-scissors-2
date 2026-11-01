@@ -1,5 +1,7 @@
 package com.mlicer.rockpaperscissors.domain.model;
 
+import com.mlicer.rockpaperscissors.domain.exception.GameRuleViolationException;
+import com.mlicer.rockpaperscissors.domain.exception.InvalidMoveException;
 import com.mlicer.rockpaperscissors.domain.rules.ClassicRules;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,8 +69,8 @@ public class GameTest {
         }
 
         // Attempting to play a fourth round should fail
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
+        GameRuleViolationException exception = assertThrows(
+                GameRuleViolationException.class,
                 () -> game.playRound(player1, Move.PAPER)
         );
         assertEquals("The game has already finished.", exception.getMessage());
@@ -76,8 +78,8 @@ public class GameTest {
 
     @Test
     void shouldThrowExceptionIfMoveIsNotAllowedInCurrentRules() {
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
+        InvalidMoveException exception = assertThrows(
+                InvalidMoveException.class,
                 () -> game.playRound(player1, Move.SPOCK)
         );
         assertEquals("Move SPOCK is not allowed in this game mode.", exception.getMessage());
@@ -105,7 +107,7 @@ public class GameTest {
 
     @Test
     void shouldThrowExceptionWhenPlayersAreTheSame() {
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(GameRuleViolationException.class, () ->
                 new Game("game-1", player1, player1, new ClassicRules(), WinningCondition.bestOf(5))
         );
     }
@@ -113,7 +115,7 @@ public class GameTest {
     @Test
     void shouldThrowExceptionIfSamePlayerTriesToPlayTwiceInSameRound() {
         game.playRound(player1, Move.ROCK);
-        assertThrows(IllegalStateException.class, () -> game.playRound(player1, Move.PAPER));
+        assertThrows(GameRuleViolationException.class, () -> game.playRound(player1, Move.PAPER));
     }
 
     @Test
@@ -129,15 +131,15 @@ public class GameTest {
 
     @Test
     void shouldThrowExceptionWhenGameIdOrRulesAreNull() {
-        assertThrows(IllegalArgumentException.class, () -> new Game(null, player1, player2, new ClassicRules(), WinningCondition.bestOf(5)));
-        assertThrows(IllegalArgumentException.class, () -> new Game("game-1", player1, player2, null, WinningCondition.bestOf(5)));
-        assertThrows(IllegalArgumentException.class, () -> new Game("game-1", player1, player2, new ClassicRules(), null));
+        assertThrows(GameRuleViolationException.class, () -> new Game(null, player1, player2, new ClassicRules(), WinningCondition.bestOf(5)));
+        assertThrows(GameRuleViolationException.class, () -> new Game("game-1", player1, player2, null, WinningCondition.bestOf(5)));
+        assertThrows(GameRuleViolationException.class, () -> new Game("game-1", player1, player2, new ClassicRules(), null));
     }
 
     @Test
     void shouldThrowExceptionWhenPlayerOrMoveIsNullInPlayRound() {
-        assertThrows(IllegalArgumentException.class, () -> game.playRound(null, Move.ROCK));
-        assertThrows(IllegalArgumentException.class, () -> game.playRound(player1, null));
+        assertThrows(GameRuleViolationException.class, () -> game.playRound(null, Move.ROCK));
+        assertThrows(GameRuleViolationException.class, () -> game.playRound(player1, null));
     }
 
     @Test
@@ -152,10 +154,10 @@ public class GameTest {
 
     @Test
     void shouldThrowExceptionWhenPlayersAreNull() {
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(GameRuleViolationException.class, () ->
                 new Game("game-1", null, player2, new ClassicRules(), WinningCondition.bestOf(5))
         );
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(GameRuleViolationException.class, () ->
                 new Game("game-1", player1, null, new ClassicRules(), WinningCondition.bestOf(5))
         );
     }
@@ -209,21 +211,21 @@ public class GameTest {
     @Test
     void shouldThrowExceptionWhenGuestIsNull() {
         Game waitingGame = new Game("room-100", player1, new ClassicRules(), WinningCondition.bestOf(3));
-        assertThrows(IllegalArgumentException.class, () -> waitingGame.join(null));
+        assertThrows(GameRuleViolationException.class, () -> waitingGame.join(null));
     }
 
     @Test
     void shouldThrowExceptionWhenHostTriesToJoinThemselves() {
         Game waitingGame = new Game("room-100", player1, new ClassicRules(), WinningCondition.bestOf(3));
-        assertThrows(IllegalArgumentException.class, () -> waitingGame.join(player1));
+        assertThrows(GameRuleViolationException.class, () -> waitingGame.join(player1));
     }
 
     @Test
     void shouldThrowExceptionWhenThirdPlayerTriesToJoinFullGame() {
         Player player3 = new Player("3", "Charlie");
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
+        GameRuleViolationException exception = assertThrows(
+                GameRuleViolationException.class,
                 () -> game.join(player3)
         );
         assertEquals("Game is already full or not open for joining.", exception.getMessage());
@@ -243,7 +245,7 @@ public class GameTest {
 
     @Test
     void shouldThrowExceptionWhenNullPlayerTriesToAbandon() {
-        assertThrows(IllegalArgumentException.class, () -> game.abandon(null));
+        assertThrows(GameRuleViolationException.class, () -> game.abandon(null));
     }
 
     @Test
@@ -254,8 +256,8 @@ public class GameTest {
         }
         assertEquals(GameStatus.FINISHED, game.getStatus());
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
+        GameRuleViolationException exception = assertThrows(
+                GameRuleViolationException.class,
                 () -> game.abandon(player1)
         );
         assertEquals("Cannot abandon a game that is already finished or abandoned.", exception.getMessage());
@@ -277,6 +279,6 @@ public class GameTest {
     @Test
     void shouldThrowExceptionWhenCheckingMoveForUnknownPlayer() {
         Player unknown = new Player("99", "Hacker");
-        assertThrows(IllegalArgumentException.class, () -> game.hasPlayerMoved(unknown));
+        assertThrows(GameRuleViolationException.class, () -> game.hasPlayerMoved(unknown));
     }
 }

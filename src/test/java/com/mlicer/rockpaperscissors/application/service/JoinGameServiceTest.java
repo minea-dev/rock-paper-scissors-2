@@ -1,8 +1,10 @@
 package com.mlicer.rockpaperscissors.application.service;
 
 import com.mlicer.rockpaperscissors.application.dto.JoinGameCommand;
+import com.mlicer.rockpaperscissors.application.exception.GameNotFoundException;
 import com.mlicer.rockpaperscissors.application.port.out.GameEventPublisher;
 import com.mlicer.rockpaperscissors.application.port.out.GameRepository;
+import com.mlicer.rockpaperscissors.domain.exception.GameRuleViolationException;
 import com.mlicer.rockpaperscissors.domain.model.Game;
 import com.mlicer.rockpaperscissors.domain.model.GameStatus;
 import com.mlicer.rockpaperscissors.domain.model.Player;
@@ -59,8 +61,8 @@ class JoinGameServiceTest {
         JoinGameCommand command = new JoinGameCommand("invalid-room", "guest-2", "Bob");
         when(gameRepository.findById("invalid-room")).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
+        GameNotFoundException exception = assertThrows(
+                GameNotFoundException.class,
                 () -> joinGameService.joinGame(command)
         );
         assertEquals("Game not found with ID: invalid-room", exception.getMessage());
@@ -76,7 +78,7 @@ class JoinGameServiceTest {
         JoinGameCommand command = new JoinGameCommand("room-123", "guest-2", "Bob");
         when(gameRepository.findById("room-123")).thenReturn(Optional.of(waitingGame));
 
-        assertThrows(IllegalStateException.class, () -> joinGameService.joinGame(command));
+        assertThrows(GameRuleViolationException.class, () -> joinGameService.joinGame(command));
 
         verify(gameRepository, never()).save(any());
         verify(gameEventPublisher, never()).publishPlayerJoined(any());

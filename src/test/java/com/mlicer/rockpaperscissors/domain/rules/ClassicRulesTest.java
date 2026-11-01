@@ -1,5 +1,6 @@
 package com.mlicer.rockpaperscissors.domain.rules;
 
+import com.mlicer.rockpaperscissors.domain.exception.InvalidMoveException;
 import com.mlicer.rockpaperscissors.domain.model.Move;
 import com.mlicer.rockpaperscissors.domain.model.Result;
 import org.junit.jupiter.api.Test;
@@ -30,8 +31,8 @@ public class ClassicRulesTest {
 
     @Test
     void shouldThrowExceptionWhenUnsupportedMoveIsPlayed() {
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
+        InvalidMoveException exception = assertThrows(
+                InvalidMoveException.class,
                 () -> rules.evaluate(Move.SPOCK, Move.ROCK)
         );
         assertEquals("Move not supported in Classic mode", exception.getMessage());

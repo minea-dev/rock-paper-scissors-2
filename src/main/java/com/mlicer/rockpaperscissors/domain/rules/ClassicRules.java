@@ -1,5 +1,6 @@
 package com.mlicer.rockpaperscissors.domain.rules;
 
+import com.mlicer.rockpaperscissors.domain.exception.InvalidMoveException;
 import com.mlicer.rockpaperscissors.domain.model.Move;
 import com.mlicer.rockpaperscissors.domain.model.Result;
 
@@ -19,7 +20,7 @@ public class ClassicRules implements GameRules{
             case ROCK -> (m2 == Move.SCISSORS) ? Result.WIN : Result.LOSE;
             case PAPER -> (m2 == Move.ROCK) ? Result.WIN : Result.LOSE;
             case SCISSORS -> (m2 == Move.PAPER) ? Result.WIN : Result.LOSE;
-            default -> throw new IllegalArgumentException("Move not supported in Classic mode");
+            default -> throw new InvalidMoveException("Move not supported in Classic mode");
         };
     }
 }

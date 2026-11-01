@@ -1,6 +1,7 @@
 package com.mlicer.rockpaperscissors.application.service;
 
 import com.mlicer.rockpaperscissors.application.dto.JoinGameCommand;
+import com.mlicer.rockpaperscissors.application.exception.GameNotFoundException;
 import com.mlicer.rockpaperscissors.application.port.in.JoinGameUseCase;
 import com.mlicer.rockpaperscissors.application.port.out.GameEventPublisher;
 import com.mlicer.rockpaperscissors.application.port.out.GameRepository;
@@ -20,14 +21,12 @@ public class JoinGameService implements JoinGameUseCase {
     @Override
     public Game joinGame(JoinGameCommand command) {
         Game game = gameRepository.findById(command.gameId())
-                .orElseThrow(() -> new IllegalArgumentException("Game not found with ID: " + command.gameId()));
+                .orElseThrow(() -> new GameNotFoundException(command.gameId())); // <-- CAMBIO AQUÍ
 
         Player guest = new Player(command.guestId(), command.guestUsername());
-
         game.join(guest);
 
         gameRepository.save(game);
-
         gameEventPublisher.publishPlayerJoined(game);
 
         return game;

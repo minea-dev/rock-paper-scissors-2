@@ -1,8 +1,10 @@
 package com.mlicer.rockpaperscissors.application.service;
 
 import com.mlicer.rockpaperscissors.application.dto.AbandonGameCommand;
+import com.mlicer.rockpaperscissors.application.exception.GameNotFoundException;
 import com.mlicer.rockpaperscissors.application.port.out.GameEventPublisher;
 import com.mlicer.rockpaperscissors.application.port.out.GameRepository;
+import com.mlicer.rockpaperscissors.domain.exception.GameRuleViolationException;
 import com.mlicer.rockpaperscissors.domain.model.Game;
 import com.mlicer.rockpaperscissors.domain.model.GameStatus;
 import com.mlicer.rockpaperscissors.domain.model.Move;
@@ -65,7 +67,7 @@ class AbandonGameServiceTest {
         when(gameRepository.findById("non-existent")).thenReturn(Optional.empty());
         AbandonGameCommand command = new AbandonGameCommand("non-existent", host.id());
 
-        assertThrows(IllegalArgumentException.class, () -> abandonGameService.abandonGame(command));
+        assertThrows(GameNotFoundException.class, () -> abandonGameService.abandonGame(command));
 
         verify(gameRepository, never()).save(any());
         verifyNoInteractions(gameEventPublisher);
@@ -92,7 +94,7 @@ class AbandonGameServiceTest {
         when(gameRepository.findById("game-finished")).thenReturn(Optional.of(finishedGame));
         AbandonGameCommand command = new AbandonGameCommand("game-finished", host.id());
 
-        assertThrows(IllegalStateException.class, () -> abandonGameService.abandonGame(command));
+        assertThrows(GameRuleViolationException.class, () -> abandonGameService.abandonGame(command));
 
         verify(gameRepository, never()).save(any());
         verifyNoInteractions(gameEventPublisher);

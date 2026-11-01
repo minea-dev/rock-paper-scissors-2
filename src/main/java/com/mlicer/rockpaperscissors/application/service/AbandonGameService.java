@@ -1,6 +1,7 @@
 package com.mlicer.rockpaperscissors.application.service;
 
 import com.mlicer.rockpaperscissors.application.dto.AbandonGameCommand;
+import com.mlicer.rockpaperscissors.application.exception.GameNotFoundException;
 import com.mlicer.rockpaperscissors.application.port.in.AbandonGameUseCase;
 import com.mlicer.rockpaperscissors.application.port.out.GameEventPublisher;
 import com.mlicer.rockpaperscissors.application.port.out.GameRepository;
@@ -20,14 +21,12 @@ public class AbandonGameService implements AbandonGameUseCase {
     @Override
     public Game abandonGame(AbandonGameCommand command) {
         Game game = gameRepository.findById(command.gameId())
-                .orElseThrow(() -> new IllegalArgumentException("Game not found with ID: " + command.gameId()));
+                .orElseThrow(() -> new GameNotFoundException(command.gameId())); // <-- CAMBIO AQUÍ
 
         Player playerWhoLeft = resolvePlayer(game, command.playerId());
-
         game.abandon(playerWhoLeft);
 
         gameRepository.save(game);
-
         gameEventPublisher.publishPlayerLeft(game, playerWhoLeft);
         gameEventPublisher.publishGameOver(game);
 

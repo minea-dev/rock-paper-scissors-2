@@ -1,6 +1,7 @@
 package com.mlicer.rockpaperscissors.application.service;
 
 import com.mlicer.rockpaperscissors.application.dto.PlayTurnCommand;
+import com.mlicer.rockpaperscissors.application.exception.GameNotFoundException;
 import com.mlicer.rockpaperscissors.application.port.out.GameEventPublisher;
 import com.mlicer.rockpaperscissors.application.port.out.GameRepository;
 import com.mlicer.rockpaperscissors.domain.model.*;
@@ -112,7 +113,7 @@ class PlayTurnServiceTest {
 
         PlayTurnCommand command = new PlayTurnCommand("invalid-id", host.id(), "ROCK");
 
-        assertThrows(IllegalArgumentException.class, () -> playTurnService.playTurn(command));
+        assertThrows(GameNotFoundException.class, () -> playTurnService.playTurn(command));
         verify(gameRepository, never()).save(any());
     }
 

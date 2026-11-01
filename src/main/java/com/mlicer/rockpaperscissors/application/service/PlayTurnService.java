@@ -1,6 +1,7 @@
 package com.mlicer.rockpaperscissors.application.service;
 
 import com.mlicer.rockpaperscissors.application.dto.PlayTurnCommand;
+import com.mlicer.rockpaperscissors.application.exception.GameNotFoundException;
 import com.mlicer.rockpaperscissors.application.port.in.PlayTurnUseCase;
 import com.mlicer.rockpaperscissors.application.port.out.GameEventPublisher;
 import com.mlicer.rockpaperscissors.application.port.out.GameRepository;
@@ -25,10 +26,9 @@ public class PlayTurnService implements PlayTurnUseCase {
     @Override
     public Game playTurn(PlayTurnCommand command) {
         Game game = gameRepository.findById(command.gameId())
-                .orElseThrow(() -> new IllegalArgumentException("Game not found with ID: " + command.gameId()));
+                .orElseThrow(() -> new GameNotFoundException(command.gameId())); // <-- CAMBIO AQUÍ
 
         Player player = resolvePlayer(game, command.playerId());
-
         Move move = parseMove(command.move());
 
         if (isSinglePlayerAgainstCpu(game)) {
@@ -38,7 +38,6 @@ public class PlayTurnService implements PlayTurnUseCase {
         }
 
         gameRepository.save(game);
-
         return game;
     }
 
@@ -54,14 +53,11 @@ public class PlayTurnService implements PlayTurnUseCase {
 
     private void handleMultiplayerTurn(Game game, Player player, Move move) {
         int roundsBefore = game.getRoundsHistory().size();
-
         game.playRound(player, move);
 
         boolean roundCompleted = game.getRoundsHistory().size() > roundsBefore;
-
         if (roundCompleted) {
             gameEventPublisher.publishRoundFinished(game);
-
             if (game.getStatus() == GameStatus.FINISHED) {
                 gameEventPublisher.publishGameOver(game);
             }
