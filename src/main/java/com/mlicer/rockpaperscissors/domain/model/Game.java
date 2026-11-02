@@ -29,21 +29,11 @@ public class Game {
     private final List<Round> rounds = new ArrayList<>();
 
     public Game(String id, Player player1, Player player2, GameRules rules, WinningCondition winningCondition) {
-        if (id == null || id.isBlank()) {
-            throw new GameRuleViolationException("Game ID cannot be null or blank.");
-        }
-        if (player1 == null || player2 == null) {
-            throw new GameRuleViolationException("Players cannot be null.");
-        }
-        if (player1.equals(player2)) {
-            throw new GameRuleViolationException("A player cannot play against themselves.");
-        }
-        if (rules == null) {
-            throw new GameRuleViolationException("Rules cannot be null.");
-        }
-        if (winningCondition == null) {
-            throw new GameRuleViolationException("Winning condition cannot be null.");
-        }
+        if (id == null || id.isBlank()) throw new IllegalArgumentException("Game ID cannot be null or blank.");
+        if (player1 == null || player2 == null) throw new IllegalArgumentException("Players cannot be null.");
+        if (player1.equals(player2)) throw new IllegalArgumentException("A player cannot play against themselves.");
+        if (rules == null) throw new IllegalArgumentException("Rules cannot be null.");
+        if (winningCondition == null) throw new IllegalArgumentException("Winning condition cannot be null.");
 
         this.id = id;
         this.player1 = player1;
@@ -51,23 +41,13 @@ public class Game {
         this.rules = rules;
         this.winningCondition = winningCondition;
         this.status = GameStatus.IN_PROGRESS;
-        this.scorePlayer1 = 0;
-        this.scorePlayer2 = 0;
     }
 
     public Game(String id, Player player1, GameRules rules, WinningCondition winningCondition) {
-        if (id == null || id.isBlank()) {
-            throw new GameRuleViolationException("Game ID cannot be null or blank.");
-        }
-        if (player1 == null) {
-            throw new GameRuleViolationException("Player 1 (host) cannot be null.");
-        }
-        if (rules == null) {
-            throw new GameRuleViolationException("Rules cannot be null.");
-        }
-        if (winningCondition == null) {
-            throw new GameRuleViolationException("Winning condition cannot be null.");
-        }
+        if (id == null || id.isBlank()) throw new IllegalArgumentException("Game ID cannot be null or blank.");
+        if (player1 == null) throw new IllegalArgumentException("Player 1 (host) cannot be null.");
+        if (rules == null) throw new IllegalArgumentException("Rules cannot be null.");
+        if (winningCondition == null) throw new IllegalArgumentException("Winning condition cannot be null.");
 
         this.id = id;
         this.player1 = player1;
@@ -75,16 +55,40 @@ public class Game {
         this.rules = rules;
         this.winningCondition = winningCondition;
         this.status = GameStatus.WAITING_FOR_PLAYER;
-        this.scorePlayer1 = 0;
-        this.scorePlayer2 = 0;
+    }
+
+    private Game(String id, Player player1, Player player2, GameRules rules, WinningCondition condition,
+                 int score1, int score2, Move move1, Move move2, GameStatus status,
+                 Player abandoned, List<Round> history) {
+        this.id = id;
+        this.player1 = player1;
+        this.player2 = player2;
+        this.rules = rules;
+        this.winningCondition = condition;
+        this.scorePlayer1 = score1;
+        this.scorePlayer2 = score2;
+        this.movePlayer1 = move1;
+        this.movePlayer2 = move2;
+        this.status = status;
+        this.playerWhoAbandoned = abandoned;
+        if (history != null) {
+            this.rounds.addAll(history);
+        }
+    }
+
+    public static Game reconstitute(String id, Player player1, Player player2, GameRules rules,
+                                    WinningCondition condition, int score1, int score2,
+                                    Move move1, Move move2, GameStatus status,
+                                    Player abandoned, List<Round> history) {
+        return new Game(id, player1, player2, rules, condition, score1, score2, move1, move2, status, abandoned, history);
     }
 
     public void playRound(Player player, Move move) {
+        if (player == null || move == null) {
+            throw new IllegalArgumentException("Player and Move cannot be null.");
+        }
         if (this.status == GameStatus.WAITING_FOR_PLAYER) {
             throw new GameRuleViolationException("Cannot play yet, waiting for player 2 to join.");
-        }
-        if (player == null || move == null) {
-            throw new GameRuleViolationException("Player and Move cannot be null.");
         }
         if (this.status == GameStatus.FINISHED) {
             throw new GameRuleViolationException("The game has already finished.");
@@ -105,15 +109,14 @@ public class Game {
 
     public boolean hasPlayerMoved(Player player) {
         if (player == null) {
-            throw new GameRuleViolationException("Player cannot be null.");
+            throw new IllegalArgumentException("Player cannot be null.");
         }
-
         if (player.equals(player1)) {
             return this.movePlayer1 != null;
         } else if (player.equals(player2)) {
             return this.movePlayer2 != null;
         } else {
-            throw new GameRuleViolationException("Player does not belong to this game.");
+            throw new IllegalArgumentException("Player does not belong to this game.");
         }
     }
 
@@ -143,7 +146,6 @@ public class Game {
         }
 
         rounds.add(new Round(rounds.size() + 1, movePlayer1, movePlayer2, result));
-
         resetMovesForNextRound();
         checkIfGameFinished();
     }
@@ -163,7 +165,6 @@ public class Game {
         if (this.status == GameStatus.ABANDONED && playerWhoAbandoned != null) {
             return playerWhoAbandoned.equals(player1) ? Optional.of(player2) : Optional.of(player1);
         }
-
         if (scorePlayer1 >= winningCondition.targetScore()) {
             return Optional.of(player1);
         }
@@ -175,13 +176,13 @@ public class Game {
 
     public void join(Player guest) {
         if (guest == null) {
-            throw new GameRuleViolationException("Guest player cannot be null.");
+            throw new IllegalArgumentException("Guest player cannot be null.");
         }
         if (this.status != GameStatus.WAITING_FOR_PLAYER || this.player2 != null) {
             throw new GameRuleViolationException("Game is already full or not open for joining.");
         }
         if (guest.equals(this.player1)) {
-            throw new GameRuleViolationException("A player cannot play against themselves.");
+            throw new IllegalArgumentException("A player cannot play against themselves.");
         }
 
         this.player2 = guest;
@@ -190,31 +191,30 @@ public class Game {
 
     public void abandon(Player player) {
         if (player == null) {
-            throw new GameRuleViolationException("Player cannot be null.");
+            throw new IllegalArgumentException("Player cannot be null.");
         }
         if (this.status == GameStatus.FINISHED || this.status == GameStatus.ABANDONED) {
             throw new GameRuleViolationException("Cannot abandon a game that is already finished or abandoned.");
         }
         if (!player.equals(this.player1) && !player.equals(this.player2)) {
-            throw new GameRuleViolationException("Player does not belong to this game.");
+            throw new IllegalArgumentException("Player does not belong to this game.");
         }
 
         this.playerWhoAbandoned = player;
         this.status = GameStatus.ABANDONED;
     }
 
-    public GameRules getRules() {
-        return rules;
-    }
-
-    public List<Round> getRoundsHistory() {
-        return Collections.unmodifiableList(rounds);
-    }
-
+    public GameRules getRules() { return rules; }
+    public List<Round> getRoundsHistory() { return Collections.unmodifiableList(rounds); }
     public String getId() { return id; }
     public Player getPlayer1() { return player1; }
     public Player getPlayer2() { return player2; }
     public int getScorePlayer1() { return scorePlayer1; }
     public int getScorePlayer2() { return scorePlayer2; }
     public GameStatus getStatus() { return status; }
+
+    public WinningCondition getWinningCondition() { return winningCondition; }
+    public Move getMovePlayer1() { return movePlayer1; }
+    public Move getMovePlayer2() { return movePlayer2; }
+    public Player getPlayerWhoAbandoned() { return playerWhoAbandoned; }
 }

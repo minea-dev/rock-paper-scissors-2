@@ -281,4 +281,38 @@ public class GameTest {
         Player unknown = new Player("99", "Hacker");
         assertThrows(GameRuleViolationException.class, () -> game.hasPlayerMoved(unknown));
     }
+
+    @Test
+    void shouldTransitionToAbandonedAndDeclarePlayer2WinnerWhenPlayer1Abandons() {
+        game.abandon(player1);
+
+        assertEquals(GameStatus.ABANDONED, game.getStatus());
+        assertTrue(game.getWinner().isPresent());
+        assertEquals(player2, game.getWinner().get());
+    }
+
+    @Test
+    void shouldTransitionToAbandonedAndDeclarePlayer1WinnerWhenPlayer2Abandons() {
+        game.abandon(player2);
+
+        assertEquals(GameStatus.ABANDONED, game.getStatus());
+        assertTrue(game.getWinner().isPresent());
+        assertEquals(player1, game.getWinner().get());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUninvolvedPlayerTriesToAbandon() {
+        Player intruder = new Player("intruder-99", "Eve");
+        assertThrows(IllegalArgumentException.class, () -> game.abandon(intruder));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAbandoningAnAlreadyFinishedGame() {
+        Game finishedGame = new Game("room-finished", player1, player2, new ClassicRules(), WinningCondition.bestOf(1));
+        finishedGame.playRound(player1, Move.ROCK);
+        finishedGame.playRound(player2, Move.SCISSORS);
+        assertEquals(GameStatus.FINISHED, finishedGame.getStatus());
+
+        assertThrows(IllegalStateException.class, () -> finishedGame.abandon(player1));
+    }
 }
