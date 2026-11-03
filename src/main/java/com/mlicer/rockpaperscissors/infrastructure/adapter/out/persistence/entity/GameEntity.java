@@ -49,7 +49,7 @@ public class GameEntity {
     @Column(name = "player_who_abandoned_id")
     private String playerWhoAbandonedId;
 
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<RoundEntity> rounds = new ArrayList<>();
 
     protected GameEntity() {}
