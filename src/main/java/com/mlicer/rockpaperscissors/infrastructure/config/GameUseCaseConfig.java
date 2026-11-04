@@ -1,15 +1,9 @@
 package com.mlicer.rockpaperscissors.infrastructure.config;
 
-import com.mlicer.rockpaperscissors.application.port.in.AbandonGameUseCase;
-import com.mlicer.rockpaperscissors.application.port.in.CreateGameUseCase;
-import com.mlicer.rockpaperscissors.application.port.in.JoinGameUseCase;
-import com.mlicer.rockpaperscissors.application.port.in.PlayTurnUseCase;
+import com.mlicer.rockpaperscissors.application.port.in.*;
 import com.mlicer.rockpaperscissors.application.port.out.GameEventPublisher;
 import com.mlicer.rockpaperscissors.application.port.out.GameRepository;
-import com.mlicer.rockpaperscissors.application.service.AbandonGameService;
-import com.mlicer.rockpaperscissors.application.service.CreateGameService;
-import com.mlicer.rockpaperscissors.application.service.JoinGameService;
-import com.mlicer.rockpaperscissors.application.service.PlayTurnService;
+import com.mlicer.rockpaperscissors.application.service.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,5 +28,10 @@ public class GameUseCaseConfig {
     @Bean
     public AbandonGameUseCase abandonGameUseCase(GameRepository gameRepository, GameEventPublisher gameEventPublisher) {
         return new AbandonGameService(gameRepository, gameEventPublisher);
+    }
+
+    @Bean
+    public GetGameUseCase getGameUseCase(GameRepository gameRepository) {
+        return new GetGameService(gameRepository);
     }
 }
