@@ -1,0 +1,253 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Rock Paper Scissors API - Local Suite",
+    "description": "Parameterized collection for manual E2E testing, anti-cheat shield verification, and SSE event streaming.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "aliceId",
+      "value": "alice-manual",
+      "type": "string"
+    },
+    {
+      "key": "bobId",
+      "value": "bob-manual",
+      "type": "string"
+    },
+    {
+      "key": "gameId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Create Multiplayer Game (Alice)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "    const json = pm.response.json();",
+              "    pm.collectionVariables.set('gameId', json.id);",
+              "    pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+              "    pm.test('Game ID extracted successfully', () => pm.expect(json.id).to.be.a('string'));",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Guest-Id", "value": "{{aliceId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hostId\": \"{{aliceId}}\",\n  \"hostUsername\": \"Alice\",\n  \"gameMode\": \"CLASSIC\",\n  \"bestOfRounds\": 3,\n  \"vsCPU\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/games",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "games"]
+        }
+      }
+    },
+    {
+      "name": "02 - Subscribe to SSE Stream (Alice)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "text/event-stream" },
+          { "key": "X-Guest-Id", "value": "{{aliceId}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/games/{{gameId}}/events",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "games", "{{gameId}}", "events"]
+        }
+      }
+    },
+    {
+      "name": "03 - Join Game (Bob)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('Game status is IN_PROGRESS', () => pm.expect(pm.response.json().status).to.eql('IN_PROGRESS'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Guest-Id", "value": "{{bobId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gameId\": \"{{gameId}}\",\n  \"guestId\": \"{{bobId}}\",\n  \"guestUsername\": \"Bob\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/games/{{gameId}}/join",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "games", "{{gameId}}", "join"]
+        }
+      }
+    },
+    {
+      "name": "04 - Play Turn (Alice - Rock)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('Alice move recorded', () => pm.expect(pm.response.json().hasUserMoved).to.be.true);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Guest-Id", "value": "{{aliceId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gameId\": \"{{gameId}}\",\n  \"playerId\": \"{{aliceId}}\",\n  \"move\": \"ROCK\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/games/{{gameId}}/turns",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "games", "{{gameId}}", "turns"]
+        }
+      }
+    },
+    {
+      "name": "05 - Anti-Cheat Verification (Get State as Bob)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Bob sees opponent has moved', () => pm.expect(json.hasOpponentMoved).to.be.true);",
+              "pm.test('Bob has not moved yet', () => pm.expect(json.hasUserMoved).to.be.false);",
+              "pm.test('History is empty (Move kept secret)', () => pm.expect(json.history.length).to.eql(0));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-Guest-Id", "value": "{{bobId}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/games/{{gameId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "games", "{{gameId}}"]
+        }
+      }
+    },
+    {
+      "name": "06 - Play Turn (Bob - Scissors)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('Round resolved in history', () => pm.expect(pm.response.json().history.length).to.be.above(0));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Guest-Id", "value": "{{bobId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gameId\": \"{{gameId}}\",\n  \"playerId\": \"{{bobId}}\",\n  \"move\": \"SCISSORS\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/games/{{gameId}}/turns",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "games", "{{gameId}}", "turns"]
+        }
+      }
+    },
+    {
+      "name": "07 - Abandon Game (Bob Surrenders)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('Game finished by surrender', () => pm.expect(pm.response.json().status).to.eql('FINISHED'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Guest-Id", "value": "{{bobId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gameId\": \"{{gameId}}\",\n  \"playerId\": \"{{bobId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/games/{{gameId}}/abandon",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "games", "{{gameId}}", "abandon"]
+        }
+      }
+    },
+    {
+      "name": "08 - Single Player vs CPU (Instant Play)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Guest-Id", "value": "{{aliceId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hostId\": \"{{aliceId}}\",\n  \"hostUsername\": \"Alice\",\n  \"gameMode\": \"CLASSIC\",\n  \"bestOfRounds\": 3,\n  \"vsCPU\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/games",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "games"]
+        }
+      }
+    }
+  ]
+}
